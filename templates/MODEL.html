@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modelo de Regresión</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1 class="mt-5">Modelo de Regresión Múltiple</h1>
+
+        {% if table %}
+            <h2>Vista Previa del CSV Subido:</h2>
+            <div class="table-responsive">
+                {{ table | safe }}
+            </div>
+        {% endif %}
+
+        {% if columns %}
+            <h2>Seleccionar Variables para el Modelo</h2>
+            <form action="{{ url_for('regression') }}" method="post">
+                <label for="response">Variable Dependiente:</label>
+                <select name="response" id="response" class="form-control">
+                    {% for column in columns %}
+                        <option value="{{ column }}">{{ column }}</option>
+                    {% endfor %}
+                </select>
+                <br><br>
+
+                <label for="predictors">Variables Independientes:</label>
+                <select name="predictors" id="predictors" class="form-control" multiple>
+                    {% for column in columns %}
+                        <option value="{{ column }}">{{ column }}</option>
+                    {% endfor %}
+                </select>
+                <br><br>
+
+                <input type="submit" value="Ejecutar Regresión" class="btn btn-primary">
+            </form>
+        {% endif %}
+
+        {% if summary %}
+            <h2>Resumen de la Regresión</h2>
+
+            <h3>Variable Dependiente</h3>
+            <p>{{ summary['response_var'] }}</p>
+
+            <h3>Resumen del Modelo</h3>
+            <p><strong>R-cuadrado:</strong> {{ summary['r_squared'] }}</p>
+            <p><strong>Error Estándar de los Residuales:</strong> {{ summary['residual_std_error'] }}</p>
+
+            <h3>Coeficientes</h3>
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Variable</th>
+                        <th>Coeficiente</th>
+                        <th>Error Estándar</th>
+                        <th>Valor P</th>
+                        <th>Intervalo de Confianza al 95%</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for var, coef in summary['coefficients'].items() %}
+                    <tr>
+                        <td>{{ var }}</td>
+                        <td>{{ coef }}</td>
+                        <td>{{ summary['std_err'][var] }}</td>
+                        <td>{{ summary['p_values'][var] }}</td>
+                        <td>{{ summary['conf_intervals'][loop.index0][0] }} - {{ summary['conf_intervals'][loop.index0][1] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <h3>Tabla ANOVA</h3>
+            <div>{{ summary['anova'] | safe }}</div>
+
+            <h3>Prueba de Normalidad de los Residuales (Shapiro-Wilk)</h3>
+            <p><strong>Valor P:</strong> {{ summary['shapiro_p_value'] }}</p>
+
+            <h3>Factor de Inflación de Varianza (VIF)</h3>
+            {% if summary['vif'] is mapping %}
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Variable</th>
+                            <th>VIF</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for var, vif in summary['vif'].items() %}
+                        <tr>
+                            <td>{{ var }}</td>
+                            <td>{{ vif }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>{{ summary['vif'] }}</p>
+            {% endif %}
+
+            {% if summary['bartlett_stat'] is not none %}
+            <h3>Estadístico de Bartlett</h3>
+            <p><strong>Estadístico:</strong> {{ summary['bartlett_stat'] }}</p>
+            <p><strong>Valor P de Bartlett:</strong> {{ summary['bartlett_p_value'] }}</p>
+            {% endif %}
+
+            <h3>Prueba de Autocorrelación de Durbin-Watson</h3>
+            <p><strong>Estadístico de Durbin-Watson:</strong> {{ summary['durbin_watson_stat'] }}</p>
+
+            <h3>Gráficos Diagnósticos</h3>
+            <img src="{{ url_for('static', filename='uploads/residual_plots.png') }}" alt="Gráficos de Residuales">
+        {% endif %}
+    </div>
+</body>
+</html>

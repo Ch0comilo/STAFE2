@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis Exploratorio de Datos (EDA)</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container">
+        <h2 class="mt-5">Análisis Exploratorio de Datos (EDA)</h2>
+        
+        {% if tables %}
+            <h3>Primeras 10 Observaciones</h3>
+            <div class="table-responsive">
+                {{ tables|safe }}
+            </div>
+
+            <h3>Resumen Estadístico de Variables Numéricas</h3>
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Variable</th>
+                        <th>Media</th>
+                        <th>Desviación Estándar</th>
+                        <th>Mínimo</th>
+                        <th>Mediana</th>
+                        <th>Máximo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for col, stats in numerical_summary.items() %}
+                    <tr>
+                        <td>{{ col }}</td>
+                        <td>{{ stats['mean'] }}</td>
+                        <td>{{ stats['std'] }}</td>
+                        <td>{{ stats['min'] }}</td>
+                        <td>{{ stats['median'] }}</td>
+                        <td>{{ stats['max'] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <h3>Resumen de Frecuencias de Variables Categóricas</h3>
+            <ul>
+                {% for col, freqs in categorical_summary.items() %}
+                    <li><strong>{{ col }}</strong>: {{ freqs }}</li>
+                {% endfor %}
+            </ul>
+
+            <h3>Seleccionar Variable para Visualizar Gráfico</h3>
+            <form id="chart-form">
+                <select id="variable-select" class="form-control">
+                    <option value="">Selecciona una variable</option>
+                    {% for col in charts %}
+                        <option value="{{ col }}">{{ col }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+
+            <div id="chart-container" class="mt-4">
+                <!-- El gráfico se mostrará aquí -->
+            </div>
+
+            <h3>Variables Ordenadas por Similitud con la Distribución Normal</h3>
+            <ul>
+                {% for col, p_value in normality_scores %}
+                    <li>{{ col }}: p-value = {{ p_value }}</li>
+                {% endfor %}
+            </ul>
+
+            {% if heatmap_path %}
+            <h3>Matriz de Calor de Correlación</h3>
+            <div>
+                <img src="{{ url_for('static', filename='uploads/' + heatmap_path) }}" class="img-fluid" alt="Matriz de Calor de Correlación">
+            </div>
+            {% endif %}
+
+            {% if pairplot_path %}
+            <h3>Matriz de Dispersión entre Variables</h3>
+            <div>
+                <img src="{{ url_for('static', filename='uploads/' + pairplot_path) }}" class="img-fluid" alt="Matriz de Dispersión">
+            </div>
+            {% endif %}
+        {% endif %}
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#variable-select').change(function() {
+                var variable = $(this).val();
+                if (variable) {
+                    // Aquí aseguramos que la URL de la imagen se construya correctamente
+                    $('#chart-container').html('<img src="/static/uploads/' + variable + '_plot.png" class="img-fluid" alt="Gráfico de ' + variable + '">');
+                } else {
+                    $('#chart-container').html('');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
